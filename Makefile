@@ -67,6 +67,12 @@ ci: ## what CI runs, ending with a live smoke test
 dist: ## build a self-contained demo bundle under dist/
 	cd $(BACKEND) && $(PY) scripts/build_dist.py
 
+publish: ## publish this working copy to GitHub through the REST API (needs GITHUB_TOKEN)
+	cd $(BACKEND) && $(PY) scripts/publish_github.py --repo $(REPO) --message-file $(MSG)
+
+publish-dry: ## show exactly which files would be published
+	cd $(BACKEND) && $(PY) scripts/publish_github.py --dry-run
+
 clean-dist: ## remove dist/
 	rm -rf dist
 
