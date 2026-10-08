@@ -147,6 +147,26 @@ def _is_empty(token: str, owner: str, repo: str) -> bool:
     return False
 
 
+def _protected_entries(token: str, owner: str, repo: str, commit_sha: str) -> list[dict]:
+    """Blob entries for protected paths already present on the branch.
+
+    Reuses the blob SHAs that are already stored, so nothing is re-uploaded and
+    nothing that a human added by hand is dropped.
+    """
+    try:
+        commit = request("GET", f"/repos/{owner}/{repo}/git/commits/{commit_sha}", token)
+        listing = request(
+            "GET", f"/repos/{owner}/{repo}/git/trees/{commit['tree']['sha']}?recursive=1", token
+        )
+    except GitHubError:
+        return []
+    return [
+        {"path": item["path"], "mode": item["mode"], "type": "blob", "sha": item["sha"]}
+        for item in listing.get("tree", [])
+        if item.get("type") == "blob" and item["path"].startswith(PROTECTED_PREFIXES)
+    ]
+
+
 def collect_files(root: Path) -> list[Path]:
     """Every file git would track: no ``.git``, no caches, no databases."""
     """Every file git would track: no ``.git``, no caches, no databases."""
@@ -295,16 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             if index % 20 == 0 or index == len(payloads):
                 print(f"  {index}/{len(payloads)}")
 
-    # 5) tree — no base_tree, so the commit contains exactly this file set
-    tree = request(
-        "POST",
-        f"/repos/{owner}/{args.repo}/git/trees",
-        args.token,
-        body={"tree": tree_entries},
-    )
-    print(f"tree       : {tree['sha'][:12]} ({len(tree_entries)} entries)")
-
-    # 6) commit — keep history if the branch already exists
+    # 5) the parent commit, if the branch already exists
     parents: list[str] = []
     try:
         ref = request("GET", f"/repos/{owner}/{args.repo}/git/ref/heads/{args.branch}", args.token)
@@ -315,13 +326,41 @@ def main(argv: list[str] | None = None) -> int:
             raise
         print("parent     : none (first commit on this branch)")
 
+    # 6) tree — built *without* base_tree so the commit describes exactly this file
+    #    set, then any protected paths already on the branch are carried over
+    #    verbatim.  Without that second step a republish would delete files this
+    #    token cannot write (`.github/workflows/*`) — precisely what a user adds
+    #    by hand after the first push.
+    tree = request(
+        "POST",
+        f"/repos/{owner}/{args.repo}/git/trees",
+        args.token,
+        body={"tree": tree_entries},
+    )
+    print(f"tree       : {tree['sha'][:12]} ({len(tree_entries)} entries)")
+
+    if protected and parents:
+        carried = _protected_entries(args.token, owner, args.repo, parents[0])
+        if carried:
+            tree = request(
+                "POST",
+                f"/repos/{owner}/{args.repo}/git/trees",
+                args.token,
+                body={"base_tree": tree["sha"], "tree": carried},
+            )
+            print(
+                f"             carried over {len(carried)} protected file(s): "
+                + ", ".join(entry["path"] for entry in carried)
+            )
+
+    # 7) commit
     commit_body: dict = {"message": message, "tree": tree["sha"]}
     if parents:
         commit_body["parents"] = parents
     commit = request("POST", f"/repos/{owner}/{args.repo}/git/commits", args.token, body=commit_body)
     print(f"commit     : {commit['sha'][:12]}")
 
-    # 7) move the branch
+    # 8) move the branch
     if parents:
         request(
             "PATCH",

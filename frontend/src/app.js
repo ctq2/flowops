@@ -121,7 +121,8 @@ function render() {
 
   const showDetail = Boolean(state.selected);
   detail.hidden = !showDetail;
-  layout.classList.toggle('has-detail', showDetail);
+  // Defensive: a missing layout element must never blank the whole console.
+  layout?.classList.toggle('has-detail', showDetail);
   if (showDetail) {
     renderDetail(detail, context, state.selected).catch((error) => {
       detail.innerHTML = `<div class="notice warn"><span>${escapeHtml(error.message)}</span></div>`;

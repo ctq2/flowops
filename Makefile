@@ -1,4 +1,4 @@
-# FlowOps — developer entry points.
+﻿# FlowOps — developer entry points.
 #
 # Every target works with a stock Python 3.11+ and Node 20+; there is nothing to
 # install. `make verify` is the gate: it runs lint, the Python suite, the console
@@ -12,7 +12,7 @@ PORT ?= 8787
 BASE ?= http://127.0.0.1:$(PORT)
 
 .DEFAULT_GOAL := help
-.PHONY: help demo serve seed export engine test test-py test-js lint lint-py check smoke verify clean dist clean-dist
+.PHONY: help demo serve seed export engine test test-py test-js lint lint-py check check-imports render smoke verify clean dist clean-dist publish publish-dry
 
 help: ## show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -44,7 +44,13 @@ test-py: ## run the Python suite (236+ tests, no dependencies)
 test-js: ## run the console unit tests
 	cd $(FRONTEND) && $(NODE) --test tests/lib.test.js
 
-lint: lint-py ## static checks
+check-imports: ## verify every frontend import resolves (blank-page guard)
+	cd $(FRONTEND) && $(NODE) scripts/check-imports.js
+
+render: ## boot the console headlessly against $(BASE) and assert it renders
+	cd $(FRONTEND) && $(NODE) --test tests/render.test.js $(BASE)
+
+lint: lint-py check-imports ## static checks
 
 lint-py: ## policy lint + compile check (no third-party linter required)
 	cd $(BACKEND) && PYTHONIOENCODING=utf-8 $(PY) -m app.cli lint

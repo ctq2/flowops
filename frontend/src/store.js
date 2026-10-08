@@ -10,8 +10,8 @@
  * The UI never asks which one is active; it asks whether `canMutate` is true.
  */
 
-import { createClient, fingerprint, isApiError, newIdempotencyKey } from './client.js';
-import { normaliseFilters, selectTickets } from './catalog.js';
+import { createClient, fingerprint, isApiError, newIdempotencyKey } from './lib/client.js';
+import { normaliseFilters, selectTickets } from './lib/catalog.js';
 
 const SNAPSHOT_URL = './data/snapshot.json';
 
