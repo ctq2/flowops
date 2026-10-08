@@ -1,0 +1,1244 @@
+{
+  "generated_at": "2026-10-08T13:10:55.897373+00:00",
+  "policy": {
+    "name": "flowops-default",
+    "version": "3.2.0",
+    "strategy": "first_match",
+    "hash": "206362f390baaf42",
+    "calendar": "Mon/Tue/Wed/Thu/Fri 09:00-18:00 UTC+08:00 (61 holidays, 9 make-up days)",
+    "rules": [
+      {
+        "name": "R00-生产事故一级响应",
+        "when": "ticket.priority == 'P0'",
+        "description": "P0：核心链路不可用。2 小时业务时限，立即升级值班 SRE，并要求人工复核。",
+        "priority": 10,
+        "stop": false,
+        "tags": [
+          "incident",
+          "p0"
+        ],
+        "actions": [
+          {
+            "code": "assign_team",
+            "args": [
+              "tier0-incident"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "2"
+            ]
+          },
+          {
+            "code": "set_sla:calendar",
+            "args": [
+              "business"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "0.5"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "oncall-sre"
+            ]
+          },
+          {
+            "code": "escalate:notify",
+            "args": [
+              "phone"
+            ]
+          },
+          {
+            "code": "require_review",
+            "args": [
+              "一级故障需值班经理确认"
+            ]
+          },
+          {
+            "code": "tag",
+            "args": [
+              "p0"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R01-安全事件上报",
+        "when": "matches('(数据泄露|越权|注入|勒索|钓鱼|泄露|安全事件|unauthorized|breach)', lower(ticket.title)) or contains(lower(ticket.body), '数据泄露')",
+        "description": "疑似数据泄露或越权访问：安全团队 1 小时响应，禁止自动关闭。",
+        "priority": 20,
+        "stop": false,
+        "tags": [
+          "security"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P1"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "security"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "1"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "0.5"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "ciso-oncall"
+            ]
+          },
+          {
+            "code": "escalate:notify",
+            "args": [
+              "im"
+            ]
+          },
+          {
+            "code": "require_review",
+            "args": [
+              "安全事件需安全负责人确认"
+            ]
+          },
+          {
+            "code": "tag",
+            "args": [
+              "security"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R02-支付与资金链路",
+        "when": "ticket.channel == 'payments' or matches('(支付|退款|对账|结算|扣款|账单|payment|refund|settlement)', lower(ticket.title))",
+        "description": "支付、退款、对账类问题：按金钱影响定级，业务日历计时（财务不上夜班不背锅）。",
+        "priority": 30,
+        "stop": false,
+        "tags": [
+          "payments"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P1"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "payments"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "4"
+            ]
+          },
+          {
+            "code": "set_sla:calendar",
+            "args": [
+              "business"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "3"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "payments-lead"
+            ]
+          },
+          {
+            "code": "escalate:notify",
+            "args": [
+              "im"
+            ]
+          },
+          {
+            "code": "tag",
+            "args": [
+              "payments"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R03-VIP客户加速",
+        "when": "contains(ticket.labels.tier, 'vip') or 'vip' in ticket.tags",
+        "description": "VIP 或已付费客户：在原有定级上收紧时限，并挂标签便于周会复盘。",
+        "priority": 40,
+        "stop": false,
+        "tags": [
+          "vip"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P1"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "key-accounts"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "4"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "2"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "cs-lead"
+            ]
+          },
+          {
+            "code": "tag",
+            "args": [
+              "key-account"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R04-完全不可用",
+        "when": "matches('(全线|全站|大面积|所有用户|无法登录|打不开|不可用|宕机|down|outage)', lower(ticket.title + ' ' + ticket.body))",
+        "description": "影响面为全体用户：抬升到 P1 并按 4 小时业务时限处理。",
+        "priority": 50,
+        "stop": false,
+        "tags": [
+          "availability"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P1"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "platform"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "4"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "2"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "platform-lead"
+            ]
+          },
+          {
+            "code": "escalate:notify",
+            "args": [
+              "im"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R05-性能劣化",
+        "when": "matches('(慢|卡顿|超时|延迟|卡死|timeout|latency|slow)', lower(ticket.title))",
+        "description": "慢但可用：8 小时业务时限，记录基线以便容量规划。",
+        "priority": 60,
+        "stop": false,
+        "tags": [
+          "performance"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P2"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "platform"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "8"
+            ]
+          },
+          {
+            "code": "label",
+            "args": [
+              "category",
+              "performance"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R06-功能缺陷",
+        "when": "matches('(报错|异常|失败|不正确|错乱|无法|bug|error|exception|fail)', lower(ticket.title))",
+        "description": "功能不符合预期：按缺陷队列排期，2 个工作日。",
+        "priority": 70,
+        "stop": false,
+        "tags": [
+          "defect"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P2"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "app-engineering"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "16"
+            ]
+          },
+          {
+            "code": "label",
+            "args": [
+              "category",
+              "defect"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      },
+      {
+        "name": "R07-咨询与工单请求",
+        "when": "matches('(咨询|如何|怎么|申请|开通|权限|配置|报价|请问|how|request)', lower(ticket.title))",
+        "description": "使用咨询、权限申请、配置调整：1 个工作日。",
+        "priority": 80,
+        "stop": false,
+        "tags": [
+          "request"
+        ],
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P3"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "service-desk"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "8"
+            ]
+          },
+          {
+            "code": "label",
+            "args": [
+              "category",
+              "request"
+            ]
+          },
+          {
+            "code": "stop",
+            "args": []
+          }
+        ]
+      }
+    ],
+    "fallback": [
+      {
+        "name": "R99-兜底分诊",
+        "when": null,
+        "actions": [
+          {
+            "code": "set_priority",
+            "args": [
+              "P3"
+            ]
+          },
+          {
+            "code": "assign_team",
+            "args": [
+              "service-desk"
+            ]
+          },
+          {
+            "code": "set_sla:duration",
+            "args": [
+              "24"
+            ]
+          },
+          {
+            "code": "label",
+            "args": [
+              "category",
+              "untriaged"
+            ]
+          },
+          {
+            "code": "note",
+            "args": [
+              "未命中任何策略规则，已进入人工分诊队列"
+            ]
+          },
+          {
+            "code": "escalate:after",
+            "args": [
+              "16"
+            ]
+          },
+          {
+            "code": "escalate:to",
+            "args": [
+              "service-desk-lead"
+            ]
+          },
+          {
+            "code": "escalate:notify",
+            "args": [
+              "email"
+            ]
+          }
+        ]
+      }
+    ],
+    "defaults": {
+      "sla_duration_hours": 24,
+      "sla_calendar": "business",
+      "priority": "P3",
+      "team": "general"
+    },
+    "functions": [
+      "abs",
+      "add_business_hours",
+      "age_hours",
+      "business_hours_between",
+      "coalesce",
+      "contains",
+      "date_part",
+      "end_of_day",
+      "endswith",
+      "float",
+      "hours_since",
+      "hours_until",
+      "in_quiet_hours",
+      "int",
+      "is_business_day",
+      "len",
+      "lower",
+      "matches",
+      "max",
+      "min",
+      "now",
+      "round",
+      "start_of_day",
+      "startswith",
+      "str",
+      "upper",
+      "weekday"
+    ]
+  },
+  "document": {
+    "name": "flowops-default",
+    "version": "3.2.0",
+    "strategy": "first_match",
+    "description": "默认分诊与 SLA 策略：先定级、再定 SLA 口径、最后兜底。规则自上而下首个命中者生效，命中后停止（stop），因此顺序即优先级。",
+    "calendar": {
+      "tz_offset_minutes": 480,
+      "working_days": [
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri"
+      ],
+      "day_start": "09:00",
+      "day_end": "18:00",
+      "holidays": [
+        "2025-01-01",
+        "2025-01-28",
+        "2025-01-29",
+        "2025-01-30",
+        "2025-01-31",
+        "2025-02-01",
+        "2025-02-02",
+        "2025-02-03",
+        "2025-02-04",
+        "2025-04-04",
+        "2025-04-05",
+        "2025-04-06",
+        "2025-05-01",
+        "2025-05-02",
+        "2025-05-03",
+        "2025-05-04",
+        "2025-05-05",
+        "2025-05-31",
+        "2025-06-01",
+        "2025-06-02",
+        "2025-10-01",
+        "2025-10-02",
+        "2025-10-03",
+        "2025-10-04",
+        "2025-10-05",
+        "2025-10-06",
+        "2025-10-07",
+        "2025-10-08",
+        "2026-01-01",
+        "2026-01-02",
+        "2026-01-03",
+        "2026-02-15",
+        "2026-02-16",
+        "2026-02-17",
+        "2026-02-18",
+        "2026-02-19",
+        "2026-02-20",
+        "2026-02-21",
+        "2026-02-22",
+        "2026-02-23",
+        "2026-04-04",
+        "2026-04-05",
+        "2026-04-06",
+        "2026-05-01",
+        "2026-05-02",
+        "2026-05-03",
+        "2026-05-04",
+        "2026-05-05",
+        "2026-06-19",
+        "2026-06-20",
+        "2026-06-21",
+        "2026-09-25",
+        "2026-09-26",
+        "2026-09-27",
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-04",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07"
+      ],
+      "make_up_workdays": [
+        "2025-01-26",
+        "2025-02-08",
+        "2025-04-27",
+        "2025-09-28",
+        "2025-10-11",
+        "2026-02-14",
+        "2026-02-28",
+        "2026-05-09",
+        "2026-09-19"
+      ]
+    },
+    "defaults": {
+      "sla_duration_hours": 24,
+      "sla_calendar": "business",
+      "priority": "P3",
+      "team": "general"
+    },
+    "rules": [
+      {
+        "name": "R00-生产事故一级响应",
+        "description": "P0：核心链路不可用。2 小时业务时限，立即升级值班 SRE，并要求人工复核。",
+        "priority": 10,
+        "tags": [
+          "incident",
+          "p0"
+        ],
+        "when": "ticket.priority == 'P0'",
+        "then": [
+          "assign_team:tier0-incident",
+          {
+            "action": "set_sla:duration",
+            "value": "2"
+          },
+          "set_sla:calendar:business",
+          "escalate:after:0.5",
+          "escalate:to:oncall-sre",
+          "escalate:notify:phone",
+          "require_review:一级故障需值班经理确认",
+          "tag:p0",
+          "stop"
+        ]
+      },
+      {
+        "name": "R01-安全事件上报",
+        "description": "疑似数据泄露或越权访问：安全团队 1 小时响应，禁止自动关闭。",
+        "priority": 20,
+        "tags": [
+          "security"
+        ],
+        "when": "matches('(数据泄露|越权|注入|勒索|钓鱼|泄露|安全事件|unauthorized|breach)', lower(ticket.title)) or contains(lower(ticket.body), '数据泄露')",
+        "then": [
+          "set_priority:P1",
+          "assign_team:security",
+          {
+            "action": "set_sla:duration",
+            "value": "1"
+          },
+          {
+            "action": "escalate:after",
+            "value": "0.5"
+          },
+          "escalate:to:ciso-oncall",
+          "escalate:notify:im",
+          "require_review:安全事件需安全负责人确认",
+          "tag:security",
+          "stop"
+        ]
+      },
+      {
+        "name": "R02-支付与资金链路",
+        "description": "支付、退款、对账类问题：按金钱影响定级，业务日历计时（财务不上夜班不背锅）。",
+        "priority": 30,
+        "tags": [
+          "payments"
+        ],
+        "when": "ticket.channel == 'payments' or matches('(支付|退款|对账|结算|扣款|账单|payment|refund|settlement)', lower(ticket.title))",
+        "then": [
+          "set_priority:P1",
+          "assign_team:payments",
+          {
+            "action": "set_sla:duration",
+            "value": "4"
+          },
+          "set_sla:calendar:business",
+          "escalate:after:3",
+          "escalate:to:payments-lead",
+          "escalate:notify:im",
+          "tag:payments",
+          "stop"
+        ]
+      },
+      {
+        "name": "R03-VIP客户加速",
+        "description": "VIP 或已付费客户：在原有定级上收紧时限，并挂标签便于周会复盘。",
+        "priority": 40,
+        "tags": [
+          "vip"
+        ],
+        "when": "contains(ticket.labels.tier, 'vip') or 'vip' in ticket.tags",
+        "then": [
+          "set_priority:P1",
+          "assign_team:key-accounts",
+          {
+            "action": "set_sla:duration",
+            "value": "4"
+          },
+          "escalate:after:2",
+          "escalate:to:cs-lead",
+          "tag:key-account",
+          "stop"
+        ]
+      },
+      {
+        "name": "R04-完全不可用",
+        "description": "影响面为全体用户：抬升到 P1 并按 4 小时业务时限处理。",
+        "priority": 50,
+        "tags": [
+          "availability"
+        ],
+        "when": "matches('(全线|全站|大面积|所有用户|无法登录|打不开|不可用|宕机|down|outage)', lower(ticket.title + ' ' + ticket.body))",
+        "then": [
+          "set_priority:P1",
+          "assign_team:platform",
+          {
+            "action": "set_sla:duration",
+            "value": "4"
+          },
+          "escalate:after:2",
+          "escalate:to:platform-lead",
+          "escalate:notify:im",
+          "stop"
+        ]
+      },
+      {
+        "name": "R05-性能劣化",
+        "description": "慢但可用：8 小时业务时限，记录基线以便容量规划。",
+        "priority": 60,
+        "tags": [
+          "performance"
+        ],
+        "when": "matches('(慢|卡顿|超时|延迟|卡死|timeout|latency|slow)', lower(ticket.title))",
+        "then": [
+          "set_priority:P2",
+          "assign_team:platform",
+          {
+            "action": "set_sla:duration",
+            "value": "8"
+          },
+          {
+            "action": "label",
+            "value": [
+              "category",
+              "performance"
+            ]
+          },
+          "stop"
+        ]
+      },
+      {
+        "name": "R06-功能缺陷",
+        "description": "功能不符合预期：按缺陷队列排期，2 个工作日。",
+        "priority": 70,
+        "tags": [
+          "defect"
+        ],
+        "when": "matches('(报错|异常|失败|不正确|错乱|无法|bug|error|exception|fail)', lower(ticket.title))",
+        "then": [
+          "set_priority:P2",
+          "assign_team:app-engineering",
+          {
+            "action": "set_sla:duration",
+            "value": "16"
+          },
+          {
+            "action": "label",
+            "value": [
+              "category",
+              "defect"
+            ]
+          },
+          "stop"
+        ]
+      },
+      {
+        "name": "R07-咨询与工单请求",
+        "description": "使用咨询、权限申请、配置调整：1 个工作日。",
+        "priority": 80,
+        "tags": [
+          "request"
+        ],
+        "when": "matches('(咨询|如何|怎么|申请|开通|权限|配置|报价|请问|how|request)', lower(ticket.title))",
+        "then": [
+          "set_priority:P3",
+          "assign_team:service-desk",
+          {
+            "action": "set_sla:duration",
+            "value": "8"
+          },
+          {
+            "action": "label",
+            "value": [
+              "category",
+              "request"
+            ]
+          },
+          "stop"
+        ]
+      }
+    ],
+    "fallback": [
+      {
+        "name": "R99-兜底分诊",
+        "description": "未命中任何规则：按默认时限进入服务台队列，由人工分诊。",
+        "when": null,
+        "then": [
+          "set_priority:P3",
+          "assign_team:service-desk",
+          {
+            "action": "set_sla:duration",
+            "value": "24"
+          },
+          {
+            "action": "label",
+            "value": [
+              "category",
+              "untriaged"
+            ]
+          },
+          "note:未命中任何策略规则，已进入人工分诊队列",
+          {
+            "action": "escalate:after",
+            "value": "16"
+          },
+          "escalate:to:service-desk-lead",
+          "escalate:notify:email"
+        ]
+      }
+    ]
+  },
+  "tickets": [
+    {
+      "id": "TCK-2025-0001",
+      "title": "核心支付网关 502，全站下单失败",
+      "body": "9:12 起支付回调全部 502，监控显示网关实例全部重启中，已影响全部用户下单。",
+      "status": "in_progress",
+      "priority": "P1",
+      "team": "payments",
+      "reporter": "监控告警",
+      "assignee": "sre-张伟",
+      "channel": "alert",
+      "tags": [
+        "incident"
+      ],
+      "labels": {
+        "env": "prod",
+        "service": "payment-gateway"
+      },
+      "created_at": "2026-10-07T11:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.900290+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-08T13:00:00+08:00",
+      "sla_duration_hours": 4.0,
+      "sla_consumed_hours": 9.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": "2026-10-08T12:00:00+08:00",
+      "escalation_target": "payments-lead",
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 3,
+      "risk": "breached",
+      "consumed_ratio": 2.25,
+      "remaining_hours": -5.0,
+      "age_hours": 26.0,
+      "breached": true,
+      "escalation_due": true,
+      "allowed_transitions": [
+        "blocked",
+        "resolved",
+        "triaged"
+      ],
+      "status_label": "处理中",
+      "priority_label": "High / 重要"
+    },
+    {
+      "id": "TCK-2025-0002",
+      "title": "结算对账金额不一致，昨日退款少记 3 笔",
+      "body": "财务反馈昨日退款流水与渠道账单差 3 笔，涉及金额 4,280 元，需要核对。",
+      "status": "in_progress",
+      "priority": "P1",
+      "team": "payments",
+      "reporter": "财务-李静",
+      "assignee": "pay-刘洋",
+      "channel": "payments",
+      "tags": [
+        "payments",
+        "reconcile"
+      ],
+      "labels": {
+        "env": "prod",
+        "tier": "vip"
+      },
+      "created_at": "2026-10-08T04:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.901275+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-08T16:10:55.897373+08:00",
+      "sla_duration_hours": 4.0,
+      "sla_consumed_hours": 5.8178,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": "2026-10-08T15:10:55.897373+08:00",
+      "escalation_target": "payments-lead",
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 3,
+      "risk": "breached",
+      "consumed_ratio": 1.4545,
+      "remaining_hours": -1.8178,
+      "age_hours": 9.0,
+      "breached": true,
+      "escalation_due": true,
+      "allowed_transitions": [
+        "blocked",
+        "resolved",
+        "triaged"
+      ],
+      "status_label": "处理中",
+      "priority_label": "High / 重要"
+    },
+    {
+      "id": "TCK-2025-0003",
+      "title": "移动端首页加载卡顿，接口超时率升高",
+      "body": "首页接口 P95 从 180ms 涨到 2.4s，部分用户白屏，疑似缓存穿透。",
+      "status": "triaged",
+      "priority": "P2",
+      "team": "platform",
+      "reporter": "客服-王凯",
+      "assignee": null,
+      "channel": "web",
+      "tags": [
+        "performance"
+      ],
+      "labels": {
+        "env": "prod",
+        "platform": "mobile"
+      },
+      "created_at": "2026-10-08T08:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.901275+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-09T15:10:55.897373+08:00",
+      "sla_duration_hours": 8.0,
+      "sla_consumed_hours": 1.8178,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": null,
+      "escalation_target": null,
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 1,
+      "risk": "healthy",
+      "consumed_ratio": 0.2272,
+      "remaining_hours": 6.1822,
+      "age_hours": 5.0,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "blocked",
+        "closed",
+        "in_progress",
+        "open"
+      ],
+      "status_label": "已分诊",
+      "priority_label": "Normal / 常规"
+    },
+    {
+      "id": "TCK-2025-0004",
+      "title": "用户反馈导出报表缺少字段，无法对账",
+      "body": "导出的 CSV 里少了『手续费』列，财务无法完成月结。",
+      "status": "blocked",
+      "priority": "P1",
+      "team": "payments",
+      "reporter": "运营-张敏",
+      "assignee": "app-孙浩",
+      "channel": "web",
+      "tags": [
+        "defect"
+      ],
+      "labels": {
+        "env": "prod",
+        "module": "report"
+      },
+      "created_at": "2026-10-08T10:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.902276+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-09T13:00:00+08:00",
+      "sla_duration_hours": 4.0,
+      "sla_consumed_hours": 0.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": "2026-10-09T12:00:00+08:00",
+      "escalation_target": "payments-lead",
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 3,
+      "risk": "healthy",
+      "consumed_ratio": 0.0,
+      "remaining_hours": 4.0,
+      "age_hours": 3.0,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "in_progress",
+        "resolved",
+        "triaged"
+      ],
+      "status_label": "阻塞",
+      "priority_label": "High / 重要"
+    },
+    {
+      "id": "TCK-2025-0005",
+      "title": "疑似越权访问：普通账号可读取他人订单详情",
+      "body": "安全扫描发现 /api/orders/{id} 未校验归属，可越权读取任意订单，疑似数据泄露风险。",
+      "status": "in_progress",
+      "priority": "P1",
+      "team": "security",
+      "reporter": "安全扫描",
+      "assignee": "sec-周琳",
+      "channel": "alert",
+      "tags": [
+        "security"
+      ],
+      "labels": {
+        "env": "prod",
+        "severity": "high"
+      },
+      "created_at": "2026-10-08T11:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.903275+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-09T10:00:00+08:00",
+      "sla_duration_hours": 1.0,
+      "sla_consumed_hours": 0.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": "2026-10-09T09:30:00+08:00",
+      "escalation_target": "ciso-oncall",
+      "policy_hash": "206362f390baaf42",
+      "required_review": "安全事件需安全负责人确认",
+      "version": 3,
+      "risk": "healthy",
+      "consumed_ratio": 0.0,
+      "remaining_hours": 1.0,
+      "age_hours": 2.0,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "blocked",
+        "resolved",
+        "triaged"
+      ],
+      "status_label": "处理中",
+      "priority_label": "High / 重要"
+    },
+    {
+      "id": "TCK-2025-0006",
+      "title": "请问如何申请沙箱环境的开放接口权限？",
+      "body": "我们想接入开放平台接口，需要沙箱权限和一对测试密钥，流程是怎样的？",
+      "status": "triaged",
+      "priority": "P1",
+      "team": "key-accounts",
+      "reporter": "客户-星海科技",
+      "assignee": null,
+      "channel": "email",
+      "tags": [
+        "request"
+      ],
+      "labels": {
+        "tier": "vip"
+      },
+      "created_at": "2026-10-08T12:10:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.903275+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-09T13:00:00+08:00",
+      "sla_duration_hours": 4.0,
+      "sla_consumed_hours": 0.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": "2026-10-09T11:00:00+08:00",
+      "escalation_target": "cs-lead",
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 1,
+      "risk": "healthy",
+      "consumed_ratio": 0.0,
+      "remaining_hours": 4.0,
+      "age_hours": 1.0,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "blocked",
+        "closed",
+        "in_progress",
+        "open"
+      ],
+      "status_label": "已分诊",
+      "priority_label": "High / 重要"
+    },
+    {
+      "id": "TCK-2025-0007",
+      "title": "报表导出偶发 500 异常",
+      "body": "大报表导出时偶发 500，日志里有 NullPointerException，频率约每天两次。",
+      "status": "triaged",
+      "priority": "P2",
+      "team": "app-engineering",
+      "reporter": "客服-赵磊",
+      "assignee": "app-孙浩",
+      "channel": "web",
+      "tags": [
+        "defect"
+      ],
+      "labels": {
+        "env": "prod"
+      },
+      "created_at": "2026-10-08T12:30:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.904299+00:00",
+      "closed_at": null,
+      "sla_due_at": "2026-10-12T16:00:00+08:00",
+      "sla_duration_hours": 16.0,
+      "sla_consumed_hours": 0.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": null,
+      "escalation_target": null,
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 2,
+      "risk": "healthy",
+      "consumed_ratio": 0.0,
+      "remaining_hours": 16.0,
+      "age_hours": 0.6667,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "blocked",
+        "closed",
+        "in_progress",
+        "open"
+      ],
+      "status_label": "已分诊",
+      "priority_label": "Normal / 常规"
+    },
+    {
+      "id": "TCK-2025-0008",
+      "title": "活动页文案配置后又变回去了",
+      "body": "刚配置的活动文案保存成功，但刷新后恢复原值，怀疑是 CDN 缓存。",
+      "status": "resolved",
+      "priority": "P3",
+      "team": "service-desk",
+      "reporter": "运营-陈曦",
+      "assignee": "app-孙浩",
+      "channel": "web",
+      "tags": [
+        "defect"
+      ],
+      "labels": {
+        "env": "prod"
+      },
+      "created_at": "2026-10-08T12:58:55.897373+00:00",
+      "updated_at": "2026-10-08T13:10:55.905275+00:00",
+      "closed_at": "2026-10-08T13:06:55.897373+00:00",
+      "sla_due_at": "2026-10-09T17:00:00+08:00",
+      "sla_duration_hours": 8.0,
+      "sla_consumed_hours": 0.0,
+      "sla_snooze_hours": 0.0,
+      "sla_calendar": "business",
+      "escalation_at": null,
+      "escalation_target": null,
+      "policy_hash": "206362f390baaf42",
+      "required_review": null,
+      "version": 4,
+      "risk": "healthy",
+      "consumed_ratio": 0.0,
+      "remaining_hours": 8.0,
+      "age_hours": 0.1333,
+      "breached": false,
+      "escalation_due": false,
+      "allowed_transitions": [
+        "closed",
+        "in_progress"
+      ],
+      "status_label": "已解决",
+      "priority_label": "Low / 咨询"
+    }
+  ],
+  "sla": {
+    "evaluated_at": "2026-10-08T13:10:55.897373+00:00",
+    "horizon_hours": 8,
+    "totals": {
+      "all": 8,
+      "open": 7,
+      "breached": 2,
+      "due_soon": 4,
+      "escalation_due": 2,
+      "unassigned": 2
+    },
+    "policy": {
+      "name": "flowops-default",
+      "version": "3.2.0",
+      "hash": "206362f390baaf42"
+    },
+    "calendar": "Mon/Tue/Wed/Thu/Fri 09:00-18:00 UTC+08:00 (61 holidays, 9 make-up days)"
+  },
+  "histograms": {
+    "risk": {
+      "breached": 2,
+      "critical": 0,
+      "warning": 0,
+      "healthy": 6,
+      "untracked": 0
+    },
+    "priority": {
+      "P1": 5,
+      "P2": 2,
+      "P3": 1
+    },
+    "team": {
+      "payments": 3,
+      "app-engineering": 1,
+      "key-accounts": 1,
+      "platform": 1,
+      "security": 1,
+      "service-desk": 1
+    },
+    "status": {
+      "in_progress": 3,
+      "triaged": 3,
+      "blocked": 1,
+      "resolved": 1
+    }
+  },
+  "upcoming": []
+}

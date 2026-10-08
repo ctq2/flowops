@@ -1,0 +1,90 @@
+[project]
+name = "flowops"
+version = "1.0.0"
+description = "FlowOps — 带规则引擎与中国法定节假日感知 SLA 的工单运营平台"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+# Runtime dependencies: none.  That is a design decision, not an oversight — see
+# docs/adr/0002-zero-dependency-runtime.md.  The optional extras below are for
+# development convenience only; every check also runs with the standard library.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0"]
+prod = ["gunicorn>=22.0"]
+
+[project.scripts]
+flowops = "app.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+
+# --------------------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["backend"]
+extend-exclude = ["frontend", "data", ".venv"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # import sorting
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+  "SIM", # flake8-simplify
+  "C4",  # comprehensions
+  "RET", # return statements
+  "ARG", # unused arguments
+  "PTH", # use pathlib
+  "TID", # tidy imports
+  "RUF",
+]
+ignore = [
+  "E501",   # line length is handled by the formatter
+  "SIM108", # ternaries are not always clearer than if/else
+  "ARG002", # protocol implementations legitimately ignore arguments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/tests/*" = ["ARG001", "ARG002", "S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# --------------------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.11"
+files = ["backend/app"]
+mypy_path = "backend"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# -------------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = "-q"

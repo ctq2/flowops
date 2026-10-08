@@ -1,0 +1,184 @@
+{
+  "name": "flowops-default",
+  "version": "3.2.0",
+  "strategy": "first_match",
+  "description": "默认分诊与 SLA 策略：先定级、再定 SLA 口径、最后兜底。规则自上而下首个命中者生效，命中后停止（stop），因此顺序即优先级。",
+  "calendar": {
+    "tz_offset_minutes": 480,
+    "working_days": ["mon", "tue", "wed", "thu", "fri"],
+    "day_start": "09:00",
+    "day_end": "18:00",
+    "holidays": [
+      "2025-01-01",
+      "2025-01-28", "2025-01-29", "2025-01-30", "2025-01-31", "2025-02-01", "2025-02-02", "2025-02-03", "2025-02-04",
+      "2025-04-04", "2025-04-05", "2025-04-06",
+      "2025-05-01", "2025-05-02", "2025-05-03", "2025-05-04", "2025-05-05",
+      "2025-05-31", "2025-06-01", "2025-06-02",
+      "2025-10-01", "2025-10-02", "2025-10-03", "2025-10-04", "2025-10-05", "2025-10-06", "2025-10-07", "2025-10-08",
+      "2026-01-01", "2026-01-02", "2026-01-03",
+      "2026-02-15", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-22", "2026-02-23",
+      "2026-04-04", "2026-04-05", "2026-04-06",
+      "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05",
+      "2026-06-19", "2026-06-20", "2026-06-21",
+      "2026-09-25", "2026-09-26", "2026-09-27",
+      "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07"
+    ],
+    "make_up_workdays": [
+      "2025-01-26", "2025-02-08", "2025-04-27", "2025-09-28", "2025-10-11",
+      "2026-02-14", "2026-02-28", "2026-05-09", "2026-09-19"
+    ]
+  },
+  "defaults": {
+    "sla_duration_hours": 24,
+    "sla_calendar": "business",
+    "priority": "P3",
+    "team": "general"
+  },
+  "rules": [
+    {
+      "name": "R00-生产事故一级响应",
+      "description": "P0：核心链路不可用。2 小时业务时限，立即升级值班 SRE，并要求人工复核。",
+      "priority": 10,
+      "tags": ["incident", "p0"],
+      "when": "ticket.priority == 'P0'",
+      "then": [
+        "assign_team:tier0-incident",
+        { "action": "set_sla:duration", "value": "2" },
+        "set_sla:calendar:business",
+        "escalate:after:0.5",
+        "escalate:to:oncall-sre",
+        "escalate:notify:phone",
+        "require_review:一级故障需值班经理确认",
+        "tag:p0",
+        "stop"
+      ]
+    },
+    {
+      "name": "R01-安全事件上报",
+      "description": "疑似数据泄露或越权访问：安全团队 1 小时响应，禁止自动关闭。",
+      "priority": 20,
+      "tags": ["security"],
+      "when": "matches('(数据泄露|越权|注入|勒索|钓鱼|泄露|安全事件|unauthorized|breach)', lower(ticket.title)) or contains(lower(ticket.body), '数据泄露')",
+      "then": [
+        "set_priority:P1",
+        "assign_team:security",
+        { "action": "set_sla:duration", "value": "1" },
+        { "action": "escalate:after", "value": "0.5" },
+        "escalate:to:ciso-oncall",
+        "escalate:notify:im",
+        "require_review:安全事件需安全负责人确认",
+        "tag:security",
+        "stop"
+      ]
+    },
+    {
+      "name": "R02-支付与资金链路",
+      "description": "支付、退款、对账类问题：按金钱影响定级，业务日历计时（财务不上夜班不背锅）。",
+      "priority": 30,
+      "tags": ["payments"],
+      "when": "ticket.channel == 'payments' or matches('(支付|退款|对账|结算|扣款|账单|payment|refund|settlement)', lower(ticket.title))",
+      "then": [
+        "set_priority:P1",
+        "assign_team:payments",
+        { "action": "set_sla:duration", "value": "4" },
+        "set_sla:calendar:business",
+        "escalate:after:3",
+        "escalate:to:payments-lead",
+        "escalate:notify:im",
+        "tag:payments",
+        "stop"
+      ]
+    },
+    {
+      "name": "R03-VIP客户加速",
+      "description": "VIP 或已付费客户：在原有定级上收紧时限，并挂标签便于周会复盘。",
+      "priority": 40,
+      "tags": ["vip"],
+      "when": "contains(ticket.labels.tier, 'vip') or 'vip' in ticket.tags",
+      "then": [
+        "set_priority:P1",
+        "assign_team:key-accounts",
+        { "action": "set_sla:duration", "value": "4" },
+        "escalate:after:2",
+        "escalate:to:cs-lead",
+        "tag:key-account",
+        "stop"
+      ]
+    },
+    {
+      "name": "R04-完全不可用",
+      "description": "影响面为全体用户：抬升到 P1 并按 4 小时业务时限处理。",
+      "priority": 50,
+      "tags": ["availability"],
+      "when": "matches('(全线|全站|大面积|所有用户|无法登录|打不开|不可用|宕机|down|outage)', lower(ticket.title + ' ' + ticket.body))",
+      "then": [
+        "set_priority:P1",
+        "assign_team:platform",
+        { "action": "set_sla:duration", "value": "4" },
+        "escalate:after:2",
+        "escalate:to:platform-lead",
+        "escalate:notify:im",
+        "stop"
+      ]
+    },
+    {
+      "name": "R05-性能劣化",
+      "description": "慢但可用：8 小时业务时限，记录基线以便容量规划。",
+      "priority": 60,
+      "tags": ["performance"],
+      "when": "matches('(慢|卡顿|超时|延迟|卡死|timeout|latency|slow)', lower(ticket.title))",
+      "then": [
+        "set_priority:P2",
+        "assign_team:platform",
+        { "action": "set_sla:duration", "value": "8" },
+        { "action": "label", "value": ["category", "performance"] },
+        "stop"
+      ]
+    },
+    {
+      "name": "R06-功能缺陷",
+      "description": "功能不符合预期：按缺陷队列排期，2 个工作日。",
+      "priority": 70,
+      "tags": ["defect"],
+      "when": "matches('(报错|异常|失败|不正确|错乱|无法|bug|error|exception|fail)', lower(ticket.title))",
+      "then": [
+        "set_priority:P2",
+        "assign_team:app-engineering",
+        { "action": "set_sla:duration", "value": "16" },
+        { "action": "label", "value": ["category", "defect"] },
+        "stop"
+      ]
+    },
+    {
+      "name": "R07-咨询与工单请求",
+      "description": "使用咨询、权限申请、配置调整：1 个工作日。",
+      "priority": 80,
+      "tags": ["request"],
+      "when": "matches('(咨询|如何|怎么|申请|开通|权限|配置|报价|请问|how|request)', lower(ticket.title))",
+      "then": [
+        "set_priority:P3",
+        "assign_team:service-desk",
+        { "action": "set_sla:duration", "value": "8" },
+        { "action": "label", "value": ["category", "request"] },
+        "stop"
+      ]
+    }
+  ],
+  "fallback": [
+    {
+      "name": "R99-兜底分诊",
+      "description": "未命中任何规则：按默认时限进入服务台队列，由人工分诊。",
+      "when": null,
+      "then": [
+        "set_priority:P3",
+        "assign_team:service-desk",
+        { "action": "set_sla:duration", "value": "24" },
+        { "action": "label", "value": ["category", "untriaged"] },
+        "note:未命中任何策略规则，已进入人工分诊队列",
+        { "action": "escalate:after", "value": "16" },
+        "escalate:to:service-desk-lead",
+        "escalate:notify:email"
+      ]
+    }
+  ]
+}

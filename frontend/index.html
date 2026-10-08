@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FlowOps · SLA 工单运营控制台</title>
+    <meta name="description" content="FlowOps — 带规则引擎与中国法定节假日感知 SLA 的工单运营控制台" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b1220'/%3E%3Cpath d='M8 21l5-10 3 6 2.5-4L24 21z' fill='%2338bdf8'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./src/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/styles/app.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主内容</a>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <strong>FlowOps</strong>
+          <span class="brand-sub">SLA 工单运营控制台</span>
+        </div>
+      </div>
+
+      <div class="topbar-meta" id="topbar-meta">
+        <span class="chip" id="chip-mode" title="数据来源">数据源：加载中…</span>
+        <span class="chip" id="chip-policy" title="当前策略"></span>
+        <span class="chip" id="chip-calendar" title="SLA 工作日历"></span>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="主导航">
+      <button class="tab" data-view="dashboard" aria-current="page">总览</button>
+      <button class="tab" data-view="tickets">工单</button>
+      <button class="tab" data-view="sandbox">策略沙盘</button>
+      <button class="tab" data-view="policy">策略与 DSL</button>
+      <button class="tab" data-view="calendar">工作日历</button>
+      <span class="tabs-spacer"></span>
+      <label class="search">
+        <span aria-hidden="true">⌕</span>
+        <input id="global-search" type="search" placeholder="搜索工单标题 / 内容 / 编号（按 /）" autocomplete="off" />
+      </label>
+    </nav>
+
+    <main id="main" class="layout">
+      <section id="view" class="view" aria-live="polite"></section>
+      <aside id="detail" class="detail-panel" hidden aria-label="工单详情"></aside>
+    </main>
+
+    <footer class="footer">
+      <span id="footer-left">FlowOps</span>
+      <span class="footer-hint">
+        快捷键：<kbd>/</kbd> 搜索 · <kbd>1</kbd>–<kbd>5</kbd> 切换视图 · <kbd>Esc</kbd> 关闭详情
+      </span>
+      <span id="footer-right"></span>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script type="module">
+      import { boot } from './src/app.js';
+      boot().catch((error) => {
+        const view = document.getElementById('view');
+        if (view) {
+          view.innerHTML = `<div class="empty-state"><h2>启动失败</h2><pre>${String(error && error.stack ? error.stack : error)}</pre></div>`;
+        }
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>

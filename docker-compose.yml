@@ -1,0 +1,31 @@
+# `docker compose up --build` gives you the API, the console and demo data on
+# http://localhost:8787 with one command.
+
+services:
+  flowops:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flowops:1.0.0
+    container_name: flowops
+    ports:
+      - "8787:8787"
+    environment:
+      FLOWOPS_DB: /app/data/flowops.db
+      FLOWOPS_POLICY: /app/backend/config/policies/default.json
+      FLOWOPS_CALENDAR: /app/backend/config/calendars/cn-holidays.json
+    volumes:
+      - flowops-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/api/v1/health', timeout=2).status==200 else 1)"
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  flowops-data:

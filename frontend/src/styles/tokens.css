@@ -1,0 +1,65 @@
+/* Design tokens: one palette, one scale, one set of semantics.
+   Everything in app.css reads from here, so re-theming is a single file. */
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --bg: #070b14;
+  --bg-elev-1: #0d1424;
+  --bg-elev-2: #131c30;
+  --bg-elev-3: #1a2540;
+  --bg-inset: #060a12;
+
+  /* lines */
+  --line: #1e2a44;
+  --line-strong: #2b3a5c;
+
+  /* text */
+  --text: #e8eefc;
+  --text-dim: #9db0d0;
+  --text-faint: #64789c;
+
+  /* accents */
+  --accent: #38bdf8;
+  --accent-dim: #0b6f9e;
+  --violet: #a78bfa;
+
+  /* semantic: risk bands.  These names are the API's vocabulary, not decoration. */
+  --risk-breached: #f43f5e;
+  --risk-critical: #fb923c;
+  --risk-warning: #fbbf24;
+  --risk-healthy: #34d399;
+  --risk-untracked: #64748b;
+
+  /* priority */
+  --p0: #f43f5e;
+  --p1: #fb923c;
+  --p2: #38bdf8;
+  --p3: #94a3b8;
+
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f43f5e;
+
+  /* type */
+  --font-ui: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+
+  /* geometry */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-2: 0 8px 24px -12px rgb(0 0 0 / 70%);
+
+  --topbar-h: 56px;
+  --tabs-h: 46px;
+}
